@@ -1,0 +1,206 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "API Gateway resource stack for donacionesapi",
+  "Parameters": {
+    "functionapiName": {
+      "Type": "String"
+    },
+    "functionapiArn": {
+      "Type": "String"
+    },
+    "env": {
+      "Type": "String"
+    }
+  },
+  "Conditions": {
+    "ShouldNotCreateEnvResources": {
+      "Fn::Equals": [
+        {
+          "Ref": "env"
+        },
+        "NONE"
+      ]
+    }
+  },
+  "Resources": {
+    "donacionesapi": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Description": "API Gateway for Donaciones",
+        "Name": {
+          "Fn::If": [
+            "ShouldNotCreateEnvResources",
+            "donacionesapi",
+            {
+              "Fn::Join": [
+                "",
+                [
+                  "donacionesapi",
+                  "-",
+                  {
+                    "Ref": "env"
+                  }
+                ]
+              ]
+            }
+          ]
+        },
+        "EndpointConfiguration": {
+          "Types": [
+            "EDGE"
+          ]
+        },
+        "Policy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "execute-api:Invoke",
+              "Resource": "arn:aws:execute-api:*:*:*"
+            }
+          ]
+        }
+      }
+    },
+    "functionapiPermissiondonacionesapi": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "functionapiName"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "donacionesapi"
+              },
+              "/*/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "donacionesapiDeployment": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "Description": "The Development stage deployment of your API.",
+        "StageName": {
+          "Fn::If": [
+            "ShouldNotCreateEnvResources",
+            "Prod",
+            {
+              "Ref": "env"
+            }
+          ]
+        },
+        "RestApiId": {
+          "Ref": "donacionesapi"
+        }
+      },
+      "DependsOn": [
+        "donacionesapiproxy"
+      ]
+    },
+    "donacionesapiproxy": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "donacionesapi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "{proxy+}",
+        "RestApiId": {
+          "Ref": "donacionesapi"
+        }
+      }
+    },
+    "donacionesapiproxyANY": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "ANY",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Ref": "functionapiArn"
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "ResourceId": {
+          "Ref": "donacionesapiproxy"
+        },
+        "RestApiId": {
+          "Ref": "donacionesapi"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "RootUrl": {
+      "Description": "Root URL of the API gateway",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "donacionesapi"
+            },
+            ".execute-api.",
+            {
+              "Ref": "AWS::Region"
+            },
+            ".amazonaws.com/",
+            {
+              "Fn::If": [
+                "ShouldNotCreateEnvResources",
+                "Prod",
+                {
+                  "Ref": "env"
+                }
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    "ApiName": {
+      "Description": "API Friendly name",
+      "Value": "donacionesapi"
+    },
+    "ApiId": {
+      "Description": "API ID (prefix of API URL)",
+      "Value": {
+        "Ref": "donacionesapi"
+      }
+    }
+  }
+}
