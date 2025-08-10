@@ -1,0 +1,12 @@
+# Ignore backend directory - we're using /api folder instead
+backend/
+amplify/
+database/
+docs/
+*.md
+!README.md
+test-*
+deploy-*
+.env*
+logs/
+node_modules/
