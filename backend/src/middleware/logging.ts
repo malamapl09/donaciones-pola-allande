@@ -1,21 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
-import { createWriteStream, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 
-const logDir = process.env.LOG_DIR || 'logs';
-
-if (!existsSync(logDir)) {
-  mkdirSync(logDir, { recursive: true });
-}
-
-const createLogStream = (filename: string) => {
-  return createWriteStream(join(logDir, filename), { flags: 'a' });
+// Serverless-compatible logging (console only)
+const logToConsole = (type: string, data: any) => {
+  if (process.env.NODE_ENV === 'production') {
+    // In production, just log minimal info
+    console.log(`[${type}]`, JSON.stringify(data));
+  } else {
+    // In development, log more details
+    console.log(`[${type}]`, data);
+  }
 };
-
-const accessLog = createLogStream('access.log');
-const errorLog = createLogStream('error.log');
-const securityLog = createLogStream('security.log');
-const donationLog = createLogStream('donations.log');
 
 export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
@@ -33,7 +27,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
       referer: req.get('Referer')
     };
     
-    accessLog.write(JSON.stringify(logEntry) + '\n');
+    logToConsole('ACCESS', logEntry);
   });
   
   next();
@@ -55,7 +49,7 @@ export const errorLogger = (error: Error, req: Request, res: Response, next: Nex
     }
   };
   
-  errorLog.write(JSON.stringify(logEntry) + '\n');
+  logToConsole('ERROR', logEntry);
   
   if (!res.headersSent) {
     res.status(500).json({ 
@@ -77,7 +71,7 @@ export const securityLogger = (event: string, req: Request, details?: any) => {
     details
   };
   
-  securityLog.write(JSON.stringify(logEntry) + '\n');
+  logToConsole('SECURITY', logEntry);
 };
 
 export const donationLogger = (action: string, req: Request, donationData?: any) => {
@@ -94,7 +88,7 @@ export const donationLogger = (action: string, req: Request, donationData?: any)
     } : undefined
   };
   
-  donationLog.write(JSON.stringify(logEntry) + '\n');
+  logToConsole('DONATION', logEntry);
 };
 
 export const auditLogger = (action: string, userId: string, resourceId?: string, changes?: any) => {
@@ -106,6 +100,5 @@ export const auditLogger = (action: string, userId: string, resourceId?: string,
     changes
   };
   
-  const auditLog = createLogStream('audit.log');
-  auditLog.write(JSON.stringify(logEntry) + '\n');
+  logToConsole('AUDIT', logEntry);
 };
