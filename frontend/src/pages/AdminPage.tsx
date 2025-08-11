@@ -6,6 +6,8 @@ import AdminLayout from '../components/admin/AdminLayout';
 import Dashboard from '../components/admin/Dashboard';
 import DonationsList from '../components/admin/DonationsList';
 import ReferralsList from '../components/admin/ReferralsList';
+import Reports from '../components/admin/Reports';
+import ContentManager from '../components/admin/ContentManager';
 import AnalyticsDashboard from '../components/AnalyticsDashboard';
 
 const AdminContent: React.FC = () => {
@@ -30,7 +32,8 @@ const AdminContent: React.FC = () => {
         <Route path="/" element={<Dashboard />} />
         <Route path="/donations" element={<DonationsList />} />
         <Route path="/referrals" element={<ReferralsList />} />
-        <Route path="/reports" element={<ComingSoonPage feature="Reportes" />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/content" element={<ContentManager />} />
         <Route path="/analytics" element={<AnalyticsDashboard />} />
       </Routes>
     </AdminLayout>
