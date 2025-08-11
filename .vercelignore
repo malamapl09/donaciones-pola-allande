@@ -5,8 +5,9 @@ database/
 docs/
 *.md
 !README.md
-test-*
-deploy-*
+test-db.js
+test-system.sh
+deploy-aws.sh
+deploy.sh
 .env*
 logs/
-node_modules/
